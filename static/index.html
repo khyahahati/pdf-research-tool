@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Income Statement Extractor</title>
+  </head>
+  <body>
+    <h1>Income Statement Extractor</h1>
+    <p>Upload a PDF annual report and download the extracted income statement as Excel.</p>
+
+    <form id="upload-form">
+      <input id="pdf-file" type="file" accept="application/pdf" required />
+      <button id="submit-btn" type="submit">Extract Income Statement</button>
+    </form>
+
+    <p id="status" aria-live="polite"></p>
+
+    <script>
+      const form = document.getElementById("upload-form");
+      const fileInput = document.getElementById("pdf-file");
+      const statusEl = document.getElementById("status");
+      const submitBtn = document.getElementById("submit-btn");
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const file = fileInput.files[0];
+        if (!file) {
+          statusEl.textContent = "Please select a PDF file.";
+          return;
+        }
+
+        submitBtn.disabled = true;
+        statusEl.textContent = "Processing...";
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const response = await fetch("/extract-income-statement", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            let message = "Extraction failed.";
+            try {
+              const data = await response.json();
+              if (data && data.detail) {
+                message = data.detail;
+              }
+            } catch (error) {
+              // Ignore JSON parsing errors.
+            }
+            throw new Error(message);
+          }
+
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "income_statement.xlsx";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(url);
+
+          statusEl.textContent = "Done. Download should start automatically.";
+        } catch (error) {
+          statusEl.textContent = error.message || "Extraction failed.";
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

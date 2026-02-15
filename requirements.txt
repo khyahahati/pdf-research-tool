@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+camelot-py
+pdf2image
+pytesseract
+pandas
+openpyxl
+google-generativeai
